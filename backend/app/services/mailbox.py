@@ -27,10 +27,17 @@ class MailboxServiceError(RuntimeError):
     """邮件服务不可用或未配置。"""
 
 
+def _require_imap_host() -> str:
+    """登任何邮箱都要先有服务器地址，与用哪套凭据无关。"""
+    if not settings.IMAP_HOST:
+        raise MailboxServiceError("邮件服务器未配置（IMAP_HOST）")
+    return settings.IMAP_HOST
+
+
 def _require_catchall() -> tuple[str, str]:
     if not settings.catchall_enabled:
         raise MailboxServiceError(
-            "catch-all 邮箱未配置（CATCHALL_ADDRESS / CATCHALL_PASSWORD）"
+            "catch-all 邮箱未配置（IMAP_HOST / CATCHALL_ADDRESS / CATCHALL_PASSWORD）"
         )
     return settings.CATCHALL_ADDRESS, settings.CATCHALL_PASSWORD
 
@@ -115,6 +122,7 @@ def read_messages_from_own_mailbox(
     *, email: str, password: str, minutes: int, limit: int
 ) -> tuple[list[MailMessage], datetime]:
     """直接登目标邮箱读信，用于已保存（已真实创建）的邮箱。"""
+    host = _require_imap_host()
     window_start = datetime.now(UTC) - timedelta(minutes=minutes)
     limits = imap.FetchLimits(
         minutes=minutes,
@@ -123,7 +131,7 @@ def read_messages_from_own_mailbox(
     )
     try:
         infos = imap.fetch_recent_messages(
-            host=settings.IMAP_HOST,
+            host=host,
             port=settings.IMAP_PORT,
             address=email,
             password=password,

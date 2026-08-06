@@ -100,7 +100,8 @@ class Settings(BaseSettings):
     MAIL_DOMAINS: Annotated[list[str] | str, BeforeValidator(parse_cors)] = [
         "3dbody.top"
     ]
-    IMAP_HOST: str = "mail.3dbody.top"
+    # 邮件服务器地址，由 .env 提供，不在代码里写死具体部署
+    IMAP_HOST: str = ""
     IMAP_PORT: int = 993
     # catch-all 兜底邮箱：未被保存的随机地址，来信都落在这里
     CATCHALL_ADDRESS: str = ""
@@ -140,7 +141,9 @@ class Settings(BaseSettings):
     @computed_field  # type: ignore[prop-decorator]
     @property
     def catchall_enabled(self) -> bool:
-        return bool(self.CATCHALL_ADDRESS and self.CATCHALL_PASSWORD)
+        return bool(
+            self.IMAP_HOST and self.CATCHALL_ADDRESS and self.CATCHALL_PASSWORD
+        )
 
     def _check_default_secret(self, var_name: str, value: str | None) -> None:
         if value == "changethis":

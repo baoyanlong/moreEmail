@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 def main() -> int:
     if not settings.catchall_enabled:
-        logger.error("CATCHALL_ADDRESS / CATCHALL_PASSWORD 未配置，跳过")
+        logger.error("IMAP_HOST / CATCHALL_ADDRESS / CATCHALL_PASSWORD 未配置，跳过")
         return 1
 
     cutoff = datetime.now(UTC) - timedelta(days=settings.CATCHALL_RETENTION_DAYS)

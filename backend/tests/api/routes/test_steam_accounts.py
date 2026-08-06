@@ -324,6 +324,7 @@ def test_messages_filters_by_recipient(
     client: TestClient, key_headers: dict[str, str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """catch-all 里混着所有地址的信，必须只返回目标收件人的。"""
+    monkeypatch.setattr(settings, "IMAP_HOST", "mail.example.com")
     monkeypatch.setattr(settings, "CATCHALL_ADDRESS", "catchall@3dbody.top")
     monkeypatch.setattr(settings, "CATCHALL_PASSWORD", "pw")
     monkeypatch.setattr(
@@ -349,6 +350,7 @@ def test_messages_keeps_raw_text_when_parsing_fails(
     client: TestClient, key_headers: dict[str, str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """正则失效时原文必须还在，否则接口彻底不可用。"""
+    monkeypatch.setattr(settings, "IMAP_HOST", "mail.example.com")
     monkeypatch.setattr(settings, "CATCHALL_ADDRESS", "catchall@3dbody.top")
     monkeypatch.setattr(settings, "CATCHALL_PASSWORD", "pw")
     monkeypatch.setattr(
@@ -411,6 +413,7 @@ def test_messages_clamps_window_and_limit(
     client: TestClient, key_headers: dict[str, str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """超大的 minutes/limit 必须被压到上限，不能让调用方拖垮 IMAP。"""
+    monkeypatch.setattr(settings, "IMAP_HOST", "mail.example.com")
     monkeypatch.setattr(settings, "CATCHALL_ADDRESS", "catchall@3dbody.top")
     monkeypatch.setattr(settings, "CATCHALL_PASSWORD", "pw")
     captured: dict[str, object] = {}
