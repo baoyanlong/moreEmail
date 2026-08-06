@@ -112,6 +112,99 @@ class ItemsPublic(SQLModel):
     count: int
 
 
+# ---------------------------------------------------------------- Steam 账号
+# 与 User 无任何关联：这组接口不接用户体系，只用固定 API Key 鉴权。
+
+
+class SteamAccountBase(SQLModel):
+    email: EmailStr = Field(unique=True, index=True, max_length=255)
+    steam_username: str = Field(unique=True, index=True, max_length=64)
+    note: str | None = Field(default=None, max_length=255)
+
+
+# 入参：四项凭据由 /generate 生成后原样回传
+class SteamAccountCreate(SteamAccountBase):
+    email_password: str = Field(min_length=1, max_length=255)
+    steam_password: str = Field(min_length=1, max_length=255)
+
+
+class SteamAccountUpdate(SQLModel):
+    note: str | None = Field(default=None, max_length=255)
+
+
+class SteamAccount(SteamAccountBase, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    # 明文存储：这两个密码需要整套交付给账号使用者，不能只存哈希。
+    email_password: str = Field(max_length=255)
+    steam_password: str = Field(max_length=255)
+    created_at: datetime | None = Field(
+        default_factory=get_datetime_utc,
+        sa_type=DateTime(timezone=True),  # type: ignore
+    )
+
+
+# 列表出参：不含密码，避免一次调用批量泄露所有凭据
+class SteamAccountPublic(SteamAccountBase):
+    id: uuid.UUID
+    created_at: datetime | None = None
+
+
+# 单条出参：含明文密码，转让账号时才调用
+class SteamAccountDetail(SteamAccountPublic):
+    email_password: str
+    steam_password: str
+
+
+class SteamAccountsPublic(SQLModel):
+    data: list[SteamAccountPublic]
+    count: int
+
+
+# /generate 的出参，纯计算结果，不落库
+class GeneratedCredentials(SQLModel):
+    email: EmailStr
+    email_password: str
+    steam_username: str
+    steam_password: str
+
+
+class MailAddress(SQLModel):
+    name: str = ""
+    address: str = ""
+
+
+class MailAttachment(SQLModel):
+    id: str
+    filename: str | None = None
+    content_type: str
+    size: int | None = None
+
+
+class MailMessage(SQLModel):
+    id: str
+    # 不叫 from：那是保留字，用 alias 换来的只是和 SQLModel 配置类型打架
+    sender: list[MailAddress] = Field(default_factory=list)
+    to: list[MailAddress] = Field(default_factory=list)
+    subject: str = ""
+    received_at: datetime
+    size: int
+    text: str | None = None
+    html: str | None = None
+    attachments: list[MailAttachment] = Field(default_factory=list)
+    truncated: bool = False
+    body_loaded: bool = True
+    # 从正文里解析出来的结果，解析失败时为空，原始 text 始终保留
+    extracted_code: str | None = None
+    extracted_links: list[str] = Field(default_factory=list)
+
+
+class MailMessagesPublic(SQLModel):
+    email: str
+    window_start: datetime
+    data: list[MailMessage]
+    count: int
+
+
 # Generic message
 class Message(SQLModel):
     message: str

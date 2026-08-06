@@ -4,7 +4,15 @@ from typing import Any
 from sqlmodel import Session, select
 
 from app.core.security import get_password_hash, verify_password
-from app.models import Item, ItemCreate, User, UserCreate, UserUpdate
+from app.models import (
+    Item,
+    ItemCreate,
+    SteamAccount,
+    SteamAccountCreate,
+    User,
+    UserCreate,
+    UserUpdate,
+)
 
 
 def create_user(*, session: Session, user_create: UserCreate) -> User:
@@ -66,3 +74,27 @@ def create_item(*, session: Session, item_in: ItemCreate, owner_id: uuid.UUID) -
     session.commit()
     session.refresh(db_item)
     return db_item
+
+
+def create_steam_account(
+    *, session: Session, account_in: SteamAccountCreate
+) -> SteamAccount:
+    db_account = SteamAccount.model_validate(account_in)
+    session.add(db_account)
+    session.commit()
+    session.refresh(db_account)
+    return db_account
+
+
+def get_steam_account_by_email(*, session: Session, email: str) -> SteamAccount | None:
+    statement = select(SteamAccount).where(SteamAccount.email == email)
+    return session.exec(statement).first()
+
+
+def get_steam_account_by_username(
+    *, session: Session, steam_username: str
+) -> SteamAccount | None:
+    statement = select(SteamAccount).where(
+        SteamAccount.steam_username == steam_username
+    )
+    return session.exec(statement).first()

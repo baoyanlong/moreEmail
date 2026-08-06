@@ -93,6 +93,55 @@ class Settings(BaseSettings):
     FIRST_SUPERUSER: EmailStr
     FIRST_SUPERUSER_PASSWORD: str
 
+    # ------------------------------------------------ Steam 账号 / 临时邮箱
+    # 可用邮箱域名，逗号分隔。/generate 默认随机挑一个，也可用 domain 参数指定。
+    # 每个域名都需要在 Mailcow 添加并配好 catch-all 别名，见 mail-domain-setup.md。
+    # 复用 parse_cors —— 它就是个通用的逗号分隔解析器，与 CORS 无关。
+    MAIL_DOMAINS: Annotated[list[str] | str, BeforeValidator(parse_cors)] = [
+        "3dbody.top"
+    ]
+    IMAP_HOST: str = "mail.3dbody.top"
+    IMAP_PORT: int = 993
+    # catch-all 兜底邮箱：未被保存的随机地址，来信都落在这里
+    CATCHALL_ADDRESS: str = ""
+    CATCHALL_PASSWORD: str = ""
+    MAILCOW_BASE_URL: str = ""
+    MAILCOW_API_KEY: str = ""
+    # 保存邮箱时分配的配额
+    MAILBOX_QUOTA_BYTES: int = 512 * 1024 * 1024
+    # 禁止转让出去的账号外发，保护域名 IP 信誉
+    MAILBOX_DISABLE_OUTBOUND: bool = True
+    # 读信窗口与数量上限
+    MAIL_DEFAULT_WINDOW_MINUTES: int = 10
+    MAIL_MAX_WINDOW_MINUTES: int = 60
+    MAIL_DEFAULT_LIMIT: int = 20
+    MAIL_MAX_LIMIT: int = 50
+    MAIL_RETURN_HTML: bool = False
+    # 保存时从 catch-all 搬运历史邮件的回溯天数，0 表示不搬
+    MAIL_MIGRATE_LOOKBACK_DAYS: int = 7
+    # catch-all 清理脚本保留天数
+    CATCHALL_RETENTION_DAYS: int = 14
+    # 这组接口的固定 API Key，请求头 X-API-Key
+    STEAM_API_KEY: str = "changethis"
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def mail_domains(self) -> list[str]:
+        """规范化后的域名列表：统一小写，便于与邮箱地址比对。"""
+        raw = self.MAIL_DOMAINS
+        values = raw if isinstance(raw, list) else [raw]
+        return [str(d).strip().lower() for d in values if str(d).strip()]
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def mailcow_enabled(self) -> bool:
+        return bool(self.MAILCOW_BASE_URL and self.MAILCOW_API_KEY)
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def catchall_enabled(self) -> bool:
+        return bool(self.CATCHALL_ADDRESS and self.CATCHALL_PASSWORD)
+
     def _check_default_secret(self, var_name: str, value: str | None) -> None:
         if value == "changethis":
             message = (
@@ -111,6 +160,7 @@ class Settings(BaseSettings):
         self._check_default_secret(
             "FIRST_SUPERUSER_PASSWORD", self.FIRST_SUPERUSER_PASSWORD
         )
+        self._check_default_secret("STEAM_API_KEY", self.STEAM_API_KEY)
 
         return self
 

@@ -1,8 +1,9 @@
+import hmac
 from collections.abc import Generator
 from typing import Annotated
 
 import jwt
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, Header, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jwt.exceptions import InvalidTokenError
 from pydantic import ValidationError
@@ -55,3 +56,17 @@ def get_current_active_superuser(current_user: CurrentUser) -> User:
             status_code=403, detail="The user doesn't have enough privileges"
         )
     return current_user
+
+
+def verify_api_key(
+    x_api_key: Annotated[str | None, Header(alias="X-API-Key")] = None,
+) -> None:
+    """Steam 账号相关接口的固定 Key 鉴权，与 User 体系无关。
+
+    用 compare_digest 而不是 ==，避免按字节短路比较泄露 Key 的前缀。
+    """
+    if not x_api_key or not hmac.compare_digest(x_api_key, settings.STEAM_API_KEY):
+        raise HTTPException(status_code=401, detail="Invalid API key")
+
+
+ApiKeyDep = Annotated[None, Depends(verify_api_key)]
