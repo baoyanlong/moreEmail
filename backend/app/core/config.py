@@ -95,7 +95,7 @@ class Settings(BaseSettings):
 
     # ------------------------------------------------ Steam 账号 / 临时邮箱
     # 可用邮箱域名，逗号分隔。/generate 默认随机挑一个，也可用 domain 参数指定。
-    # 每个域名都需要在 Mailcow 添加并配好 catch-all 别名，见 mail-domain-setup.md。
+    # 每个域名都需要在 Mailcow 添加并配好 catch-all 别名，见 docs/邮箱域名配置指南.md。
     # 复用 parse_cors —— 它就是个通用的逗号分隔解析器，与 CORS 无关。
     MAIL_DOMAINS: Annotated[list[str] | str, BeforeValidator(parse_cors)] = [
         "3dbody.top"
