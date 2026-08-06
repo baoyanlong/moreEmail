@@ -6,3 +6,15 @@ backend/app/frontend/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# 真实配置，含生产凭据。配置项清单见 .env.example
+.env
+
+# 本地工作笔记
+cc_chat.md
+
+# library-skills 装的符号链接，指向 .venv 内的包，不应入库
+.agents/skills/fastapi
+.agents/skills/sqlmodel
+.claude/skills/fastapi
+.claude/skills/sqlmodel
