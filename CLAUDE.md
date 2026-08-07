@@ -30,7 +30,21 @@ bash ./scripts/test.sh        # 构建镜像 + 起栈 + 跑后端测试 + 清理
 
 **不要用不带服务名的 `docker compose up -d` / `docker compose watch`。** `compose.override.yml` 里的 `playwright` 服务会被一并构建，它要拉一个约 800MB 的 `mcr.microsoft.com/playwright` 基础镜像，在国内网络下可能只有几十 KB/s（实测卡了 2 小时以上）。E2E 测试建议在本机跑 `bunx playwright test`，或按需单独 `docker compose up -d playwright`。
 
-首次启动前需要 Docker Desktop 正在运行（`open /Applications/Docker.app`）。`prestart` 是一次性任务，跑完迁移和初始超级用户后 `exited (0)` 是正常状态。默认账号来自 `.env` 的 `FIRST_SUPERUSER` / `FIRST_SUPERUSER_PASSWORD`（`admin@example.com` / `changethis`）。
+首次启动前需要 Docker Desktop 正在运行（`open /Applications/Docker.app`）。`prestart` 是一次性任务，跑完迁移和初始超级用户后 `exited (0)` 是正常状态。
+
+后台登录账号取自 `.env` 的 `FIRST_SUPERUSER` / `FIRST_SUPERUSER_PASSWORD`，具体值查 `.env`（该文件不入库）。注意 `initial_data.py` 的逻辑是「邮箱不存在才创建」，所以改了 `FIRST_SUPERUSER` 只会**新增**一个超级用户，旧的不会被改名或删除；改 `FIRST_SUPERUSER_PASSWORD` 对已存在的用户则完全无效。
+
+### 本地服务地址
+
+| 服务 | 地址 |
+|---|---|
+| 应用（前端 + API） | <http://localhost:8000> |
+| Swagger 文档 | <http://localhost:8000/docs> |
+| Adminer（数据库） | `http://localhost:8080/?pgsql=db&username=postgres&db=app` |
+| MailCatcher（本地收信） | <http://localhost:1080> |
+| Vite dev server | <http://localhost:5173> |
+
+**Adminer 的 System 必须选 PostgreSQL**，下拉框默认是 MySQL/MariaDB。URL 里的驱动参数是 `pgsql=`，不是 `server=`（后者才是 MySQL 的）。选错驱动时握手在协议层就失败，**Postgres 日志里不会留下任何认证记录** —— 排查时如果 db 日志干净，说明请求根本没到数据库，不要再纠结密码。Server 填 `db`，用户名 `postgres`，密码见 `.env` 的 `POSTGRES_PASSWORD`。
 
 ### 后端（在 `backend/` 下）
 
